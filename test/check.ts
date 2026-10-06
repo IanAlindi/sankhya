@@ -1,0 +1,17 @@
+import { psychic, destiny, nameReading, yearNumber, vedicCells, yantraConstant, NINE } from '../src/lib/num.ts';
+import { sky, vedicDay, tzolkin, sunTimes, nextChange } from '../src/lib/astro.ts';
+const b = { y: 1934, m: 5, d: 12 };
+console.log('psychic', psychic(b), 'destiny', destiny(b));
+const nm = nameReading('Harish Johari')!; console.log('name', nm.words.map(w => w.word + '=' + w.total), nm.total, nm.reading);
+console.log('year 1991', yearNumber(b, 1991));
+console.log('vedic counts', NINE.map(n => n + ':' + vedicCells(n).length).join(' '));
+console.log('yantra consts', NINE.map(n => n + ':' + yantraConstant(n)).join(' '));
+const nm2 = sky(new Date('2024-04-08T18:21:00Z')); console.log('new moon elong', nm2.elong.toFixed(2), nm2.nakshatra.name, nm2.tithi.name);
+const fm = sky(new Date('2024-04-23T23:49:00Z')); console.log('full moon elong', fm.elong.toFixed(2), fm.tithi.name);
+const t = new Date('2026-10-06T09:00:00+03:00'); const s = sky(t);
+console.log('2026-10-06', s.tithi, s.nakshatra, s.yoga, s.moonRashi.name, 'illum', s.illum.toFixed(2));
+console.log('tithi ends', nextChange(t, x => x.tithi.index)?.toISOString());
+const st = sunTimes({ y: 2026, m: 10, d: 6 }, -1.286, 36.817); console.log('Nairobi rise/set UTC', st.rise?.toISOString(), st.set?.toISOString());
+const vd = vedicDay(t, -1.286, 36.817); console.log('weekday', vd.weekday, 'first hora', vd.horas[0].ruler, 'rahu', vd.rahuKala.start.toISOString(), vd.rahuKala.end.toISOString());
+console.log('tzolkin 2012-12-21', tzolkin({ y: 2012, m: 12, d: 21 }));
+const lond = sunTimes({ y: 2026, m: 6, d: 21 }, 51.507, -0.128); console.log('London midsummer', lond.rise?.toISOString(), lond.set?.toISOString());
