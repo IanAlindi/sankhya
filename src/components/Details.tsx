@@ -2,9 +2,9 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { parseYMD, type Profile } from '../lib/num';
 
-export function Details({ initial, isExample, onSave, onClose, onClear }: {
-  initial: Profile | null; isExample: boolean;
-  onSave: (p: Profile) => void; onClose: () => void; onClear: () => void;
+export function Details({ mode, initial, first, onSave, onClose, onRemove }: {
+  mode: 'add' | 'edit'; initial: Profile | null; first: boolean;
+  onSave: (p: Profile) => void; onClose: () => void; onRemove: () => void;
 }) {
   const [name, setName] = useState(initial?.name ?? '');
   const [dob, setDob] = useState(initial?.dob ?? '');
@@ -12,7 +12,8 @@ export function Details({ initial, isExample, onSave, onClose, onClear }: {
   const [hinduDay, setHinduDay] = useState(initial?.hinduDay ?? false);
   const [offset, setOffset] = useState(initial?.utcOffset?.toString() ?? '');
   const [error, setError] = useState('');
-  const [confirmClear, setConfirmClear] = useState(false);
+  const [confirmRemove, setConfirmRemove] = useState(false);
+  const who = initial?.name || 'this person';
 
   const smallHours = (() => {
     if (!time) return false;
@@ -22,25 +23,28 @@ export function Details({ initial, isExample, onSave, onClose, onClear }: {
 
   function submit(e: FormEvent) {
     e.preventDefault();
-    if (!parseYMD(dob)) { setError('Enter your date of birth as a full date.'); return; }
+    if (!parseYMD(dob)) { setError('Enter the date of birth as a full date.'); return; }
     const off = offset.trim() === '' ? undefined : Number(offset);
     if (off !== undefined && (Number.isNaN(off) || off < -12 || off > 14)) { setError('UTC offset is in hours, between −12 and +14 (Nairobi is 3).'); return; }
     onSave({ name: name.trim(), dob, time: time || undefined, hinduDay: smallHours ? hinduDay : undefined, utcOffset: off });
   }
 
   return (
-    <section className="details" aria-label="Your details">
+    <section className="details" aria-label={mode === 'add' ? 'Add a person' : `Edit ${who}`}>
       <form className="wrap" onSubmit={submit}>
         <div className="section-head">
-          <span className="eyebrow">Your details</span>
+          <span className="eyebrow">{mode === 'edit' ? `Edit ${who}` : first ? 'Your details' : 'Add a person'}</span>
           <h2 style={{ fontSize: 'var(--step-2)' }} className="display">Three facts make the three numbers.</h2>
-          <p className="muted">Date of birth gives your psychic and destiny numbers. The name you are known by gives your name number. Birth time is optional; it only matters for births in the small hours and for the Moon at your birth. Everything stays in this browser.</p>
+          <p className="muted">
+            Date of birth gives the psychic and destiny numbers; the name they are known by gives the name number. Birth time is optional and only matters for births in the small hours and for the Moon at birth.
+            {mode === 'add' && !first ? ' Everyone you save appears in the bar at the top; one click switches the whole site to them.' : ''} Everything stays in this browser.
+          </p>
         </div>
         <div className="grid">
           <div className="field">
-            <label htmlFor="f-name">Name you are known by</label>
+            <label htmlFor="f-name">Name they are known by</label>
             <input id="f-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Harish Johari" autoComplete="name" />
-            <span className="hint">The name on your work and your accounts, not necessarily your passport.</span>
+            <span className="hint">The name used for work and accounts, not necessarily the passport.</span>
           </div>
           <div className="field">
             <label htmlFor="f-dob">Date of birth</label>
@@ -53,7 +57,7 @@ export function Details({ initial, isExample, onSave, onClose, onClear }: {
           <div className="field">
             <label htmlFor="f-off">UTC offset at birth (optional)</label>
             <input id="f-off" inputMode="decimal" value={offset} onChange={(e) => setOffset(e.target.value)} placeholder="this device's zone" />
-            <span className="hint">Only used to place the Moon at your birth.</span>
+            <span className="hint">Only used to place the Moon at birth.</span>
           </div>
         </div>
         {smallHours && (
@@ -65,14 +69,14 @@ export function Details({ initial, isExample, onSave, onClose, onClear }: {
         )}
         {error && <p role="alert" style={{ color: 'var(--sindoor)' }}>{error}</p>}
         <div className="row">
-          <button className="btn primary" type="submit">Save details</button>
+          <button className="btn primary" type="submit">{mode === 'add' ? 'Save and view' : 'Save changes'}</button>
           <button className="btn ghost" type="button" onClick={onClose}>Cancel</button>
-          {!isExample && !confirmClear && <button className="btn ghost" type="button" onClick={() => setConfirmClear(true)}>Remove my details…</button>}
-          {confirmClear && (
+          {mode === 'edit' && !confirmRemove && <button className="btn ghost" type="button" onClick={() => setConfirmRemove(true)}>Remove {who}…</button>}
+          {confirmRemove && (
             <span className="row">
-              <span className="small muted">This deletes your details from this browser. Journal and people stay.</span>
-              <button className="btn" type="button" onClick={onClear}>Remove</button>
-              <button className="btn ghost" type="button" onClick={() => setConfirmClear(false)}>Keep</button>
+              <span className="small muted">This deletes {who} and their journal from this browser.</span>
+              <button className="btn" type="button" onClick={onRemove}>Remove</button>
+              <button className="btn ghost" type="button" onClick={() => setConfirmRemove(false)}>Keep</button>
             </span>
           )}
         </div>

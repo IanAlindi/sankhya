@@ -83,8 +83,8 @@ function group(es: Enriched[], key: (e: Enriched) => string, order: string[]) {
   });
 }
 
-export function Journal({ self, journal, place, saveEntry, removeEntry, todayKey }: {
-  self: Self; journal: Record<string, Entry>; place: Place; saveEntry: (e: Entry) => void; removeEntry: (k: string) => void; todayKey: string;
+export function Journal({ self, who, journal, place, saveEntry, removeEntry, todayKey }: {
+  self: Self; who: string; journal: Record<string, Entry>; place: Place; saveEntry: (e: Entry) => void; removeEntry: (k: string) => void; todayKey: string;
 }) {
   const [backup, setBackup] = useState('');
   const [msg, setMsg] = useState('');
@@ -125,7 +125,7 @@ export function Journal({ self, journal, place, saveEntry, removeEntry, todayKey
   return (
     <>
       <section className="section">
-        <SectionHead eyebrow="Journal" title="Your own evidence">
+        <SectionHead eyebrow={`Journal · ${who}`} title="Your own evidence">
           Numerology here is a lens, not a verdict. Each entry is matched with that day's date number, weekday planet and Moon, so after a week or two you can see which of them, if any, move with your energy.
         </SectionHead>
         <div className="cols">
@@ -178,7 +178,7 @@ export function Journal({ self, journal, place, saveEntry, removeEntry, todayKey
 
       <section className="section">
         <SectionHead eyebrow="Backup" title="Keep a copy">
-          Your details, people and journal live only in this browser. Clearing site data erases them, so copy a backup now and then.
+          Everyone you save, and each person's journal, lives only in this browser; the backup covers all of them. Clearing site data erases them, so copy a backup now and then.
         </SectionHead>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button className="btn" onClick={copy}>Copy backup</button>
