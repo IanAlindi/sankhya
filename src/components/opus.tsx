@@ -332,6 +332,58 @@ export function ElementSpiral() {
   );
 }
 
+/** The Golden Chain of Homer's circuit: the Celestial Fire thickens down through the Elements
+ *  into the Earth, and the Central Fire volatilises it back up, regenerated. */
+export function FireCycle() {
+  const els: ElementK[] = ['fire', 'air', 'water', 'earth'];
+  const y = (i: number) => 128 + i * 92;
+  const L = 150, R = 370;
+  const t = (x: number, yy: number, s: string, o: { size?: number; anchor?: 'start' | 'middle' | 'end'; italic?: boolean; color?: string; mono?: boolean } = {}) => (
+    <text x={x} y={yy} textAnchor={o.anchor ?? 'middle'} fontSize={o.size ?? 10} fill={o.color ?? 'var(--muted)'}
+      fontFamily={o.mono ? 'var(--font-mono)' : o.italic ? 'var(--font-latin)' : 'var(--font-body)'} fontStyle={o.italic ? 'italic' : undefined}
+      letterSpacing={o.mono ? 1.2 : undefined}>{s}</text>
+  );
+  return (
+    <svg viewBox="0 0 520 600" role="img" aria-label="The circuit of the Celestial Fire: down through Fire, Air, Water and Earth by thickening, up again by volatilisation from the Central Fire">
+      <defs>
+        <radialGradient id="fc-orb"><stop offset="0" style={{ stopColor: 'var(--gold-1)', stopOpacity: 0.9 }} /><stop offset="1" style={{ stopColor: 'var(--gold-2)', stopOpacity: 0 }} /></radialGradient>
+        <marker id="fc-arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 Z" fill="var(--gold-2)" />
+        </marker>
+      </defs>
+      <ellipse cx="260" cy="46" rx="120" ry="32" fill="url(#fc-orb)" />
+      <ellipse cx="260" cy="46" rx="92" ry="22" fill="none" stroke="var(--gold-2)" />
+      {t(260, 51, 'Celestial Fire', { size: 15, italic: true, color: 'var(--fg)' })}
+      <ellipse cx="260" cy="556" rx="92" ry="22" fill="none" stroke="var(--el-fire)" />
+      {t(260, 561, 'Central Fire', { size: 15, italic: true, color: 'var(--fg)' })}
+      <path d={`M190 70 L${L} 100`} stroke="var(--gold-2)" fill="none" markerEnd="url(#fc-arrow)" />
+      <path d={`M${R} 100 L330 70`} stroke="var(--gold-2)" fill="none" markerEnd="url(#fc-arrow)" />
+      {t(452, 82, 'Regenerated fire', { size: 11, italic: true })}
+      <path d={`M${L - 52} 120 V ${y(3) + 10}`} stroke="var(--gold-2)" strokeOpacity="0.6" fill="none" markerEnd="url(#fc-arrow)" />
+      <path d={`M${R + 52} ${y(3) + 10} V 120`} stroke="var(--gold-2)" strokeOpacity="0.6" fill="none" markerEnd="url(#fc-arrow)" />
+      <text x={L - 62} y={300} fontSize="10" letterSpacing="1.2" fontFamily="var(--font-mono)" fill="var(--muted)" transform={`rotate(-90 ${L - 62} 300)`} textAnchor="middle">INSPISSATION · THICKENING</text>
+      <text x={R + 66} y={300} fontSize="10" letterSpacing="1.2" fontFamily="var(--font-mono)" fill="var(--muted)" transform={`rotate(90 ${R + 66} 300)`} textAnchor="middle">VOLATILISATION</text>
+      {els.map((k, i) => (
+        <g key={k}>
+          <circle cx={L} cy={y(i)} r="22" fill="var(--bg)" stroke={EL_COLOR[k]} />
+          <G k={k} x={L} y={y(i)} size={20} color={EL_COLOR[k]} />
+          {t(L, y(i) + 38, `most · less · least subtle ${k}`, { size: 9 })}
+          <circle cx={R} cy={y(3 - i)} r="22" fill="var(--bg)" stroke={EL_COLOR[k]} />
+          <G k={k} x={R} y={y(3 - i)} size={20} color={EL_COLOR[k]} />
+        </g>
+      ))}
+      <line x1="30" y1={y(1) + 50} x2="490" y2={y(1) + 50} stroke="var(--line)" strokeDasharray="3 5" />
+      {t(260, y(0) + 4, 'Male sperm · Sun', { size: 12, italic: true, color: 'var(--fg)' })}
+      {t(260, y(0) + 20, 'volatile · life energies', { size: 9, mono: true })}
+      {t(260, y(2) + 4, 'Female sperm & menstruum · Moon', { size: 12, italic: true, color: 'var(--fg)' })}
+      {t(260, y(2) + 20, 'fixed · matter energies', { size: 9, mono: true })}
+      {t(L, y(3) + 54, 'Womb or matrix', { size: 11, italic: true })}
+      {t(260, 488, 'Rain ↓     ↑ Dew · Fog', { size: 11, italic: true, color: 'var(--fg)' })}
+      {t(260, 512, '“Wherein the Sun and Moon operate every generation”', { size: 10, italic: true })}
+    </svg>
+  );
+}
+
 // ---------------------------------------------------------------------------------------------
 // The Tree of Life, with your planets alight.
 // ---------------------------------------------------------------------------------------------
@@ -399,22 +451,19 @@ export function TierBadge({ tier }: { tier: keyof typeof TIER }) {
 export function WorkCard({ w, index, after }: { w: Work; index?: string; after?: ReactNode }) {
   const ref = useKindle<HTMLOListElement>();
   const touches = Array.from(new Set(w.steps.flatMap((s) => s.touches ?? [])));
-  const head = (
-    <div className="work-head">
-      <span className="eyebrow">{index}{w.latin ? <> · <span className="latin-sm">{w.latin}</span></> : null}</span>
-      <h3>{w.title}</h3>
-      <p className="purpose">{w.purpose}</p>
-      <div className="work-meta">
-        {w.tier && <TierBadge tier={w.tier} />}
-        {w.time && <span className="tag">{w.time}</span>}
-        <span className="tag">{w.steps.length} {w.tier === 'read' ? 'stages' : 'steps'}</span>
-        {touches.map((t) => <span className="ess" key={t}><Glyph k={t} size={15} />{ESSENTIALS[t].name}</span>)}
+  return (
+    <article className="work" id={`work-${w.id}`}>
+      <div className="work-head">
+        <span className="eyebrow">{index}{w.latin ? <> · <span className="latin-sm">{w.latin}</span></> : null}</span>
+        <h3>{w.title}</h3>
+        <p className="purpose">{w.purpose}</p>
+        <div className="work-meta">
+          {w.tier && <TierBadge tier={w.tier} />}
+          {w.time && <span className="tag">{w.time}</span>}
+          <span className="tag">{w.steps.length} steps</span>
+          {touches.map((t) => <span className="ess" key={t}><Glyph k={t} size={15} />{ESSENTIALS[t].name}</span>)}
+        </div>
       </div>
-    </div>
-  );
-  const body = (
-    <>
-      {w.tier === 'read' && <p className="readonly"><b>Read, don't do.</b> {TIER.read.long}</p>}
       <ol className="steps" ref={ref}>
         {w.steps.map((s, i) => (
           <li className="step" key={i}>
@@ -429,21 +478,12 @@ export function WorkCard({ w, index, after }: { w: Work; index?: string; after?:
         ))}
       </ol>
       {w.cautions && (
-        <ul className="cautions">{w.cautions.map((c) => <li key={c}>{c}</li>)}</ul>
+        <div className="cautions"><b>The book warns</b><ul>{w.cautions.map((c) => <li key={c}>{c}</li>)}</ul></div>
       )}
-      {w.honest && <p className="honest"><b>Honestly:</b> {w.honest}</p>}
+      {w.notes && w.notes.map((n) => <p className="book-note" key={n}><b>The book adds</b> {n}</p>)}
       {after}
-    </>
+    </article>
   );
-  if (w.tier === 'read') {
-    return (
-      <details className="work read" id={`work-${w.id}`}>
-        <summary>{head}<span className="open-hint">Show the {w.steps.length} stages</span></summary>
-        {body}
-      </details>
-    );
-  }
-  return <article className="work" id={`work-${w.id}`}>{head}{body}</article>;
 }
 
 /** A thin bar at the top of the window that fills through the colours of the Work as you read. */
