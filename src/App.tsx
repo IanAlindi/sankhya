@@ -10,11 +10,12 @@ import { Cycles } from './views/Cycles';
 import { Others } from './views/Others';
 import { Journal } from './views/Journal';
 import { Method } from './views/Method';
+import { Alchemy } from './views/Alchemy';
 
 const EXAMPLE: Person = { id: 'example', name: 'Harish Johari', dob: '1934-05-12' };
 const TABS = [
   ['today', 'Today'], ['numbers', 'Numbers'], ['cycles', 'Cycles'],
-  ['others', 'Others'], ['journal', 'Journal'], ['method', 'Method'],
+  ['others', 'Others'], ['journal', 'Journal'], ['alchemy', 'Alchemy'], ['method', 'Method'],
 ] as const;
 type Tab = (typeof TABS)[number][0];
 const readHash = (): Tab => {
@@ -133,6 +134,7 @@ export default function App() {
         {tab === 'cycles' && <Cycles self={self} now={now} place={place} sel={sel} openDay={openDay} />}
         {tab === 'others' && <Others self={self} active={active} people={people} onAdd={() => openEditor('add')} onSwitch={switchTo} />}
         {tab === 'journal' && <Journal self={self} who={isExample ? 'the example' : active.name || 'this person'} journal={journal} place={place} saveEntry={saveEntry} removeEntry={removeEntry} todayKey={ymdKey(dateToYMD(now))} />}
+        {tab === 'alchemy' && <Alchemy self={self} profile={active} now={now} place={place} />}
         {tab === 'method' && <Method />}
       </main>
 
