@@ -6,15 +6,7 @@ import type { N } from '../lib/num';
 
 export type Essential = 'salt' | 'sulfur' | 'mercury';
 export type ElementK = 'fire' | 'air' | 'water' | 'earth';
-export type Tier = 'easy' | 'skill' | 'danger';
 export type MetalKey = 'gold' | 'silver' | 'quicksilver' | 'copper' | 'iron' | 'tin' | 'lead' | 'antimony' | 'shadow';
-
-/** Difficulty as the book itself grades it. */
-export const TIER: Record<Tier, { label: string; icon: string; long: string }> = {
-  easy: { label: 'Beginner · household things', icon: '✓', long: 'The book counts this among the beginning works anyone can do with household materials.' },
-  skill: { label: 'Laboratory skill', icon: '!', long: 'The book expects a still, steady fire and some laboratory skill here.' },
-  danger: { label: 'The book warns: dangerous', icon: '✕', long: 'The book warns that mineral works are deadly without developed skill and precaution. Know the theory first, then the practice.' },
-};
 
 // --- The three essentials and the four elements --------------------------------------------------
 
@@ -162,68 +154,6 @@ export const METAL_BG: Record<MetalKey, string> = {
 
 
 
-
-export const HAND = [
-  { finger: 'Thumb', emblem: 'Crown', salt: 'Niter', modern: 'potassium nitrate', role: 'The "king of salts", the mill everything must pass through. A powerful oxidiser, the heart of gunpowder.' },
-  { finger: 'Index', emblem: 'Six-pointed star', salt: 'Vitriol', modern: 'iron or copper sulfate', role: 'The "true mineral salt", holding a white and a red spirit. Distilled, it gave the old world sulfuric acid.' },
-  { finger: 'Middle', emblem: 'Sun', salt: 'Sal ammoniac', modern: 'ammonium chloride', role: 'Turns to vapour and re-forms; that corrosive vapour opens metals. Said to unite things that will not mix.' },
-  { finger: 'Ring', emblem: 'Lantern', salt: 'Alum', modern: 'potassium aluminium sulfate', role: 'Melts low and helps other salts fuse. A mordant and styptic since antiquity.' },
-  { finger: 'Little', emblem: 'Key', salt: 'Salt', modern: 'sodium chloride', role: 'Sea or rock salt, the key. Purified as the "fixed spirit of salt".' },
-];
-
-export const ORES: { planet: string; ore: string }[] = [
-  { planet: 'Saturn', ore: 'Galena, cerussite (lead)' }, { planet: 'Jupiter', ore: 'Cassiterite (tin)' },
-  { planet: 'Mars', ore: 'Pyrite, magnetite (iron)' }, { planet: 'Sun', ore: 'Native or placer gold' },
-  { planet: 'Venus', ore: 'Malachite, azurite, native copper' }, { planet: 'Mercury', ore: 'Cinnabar (mercury sulfide)' },
-  { planet: 'Moon', ore: 'Argentite, cerargyrite (silver)' },
-];
-
-export const GOLDS = [
-  { name: 'Astral gold', text: 'The Sun\'s continual outpouring, filling the whole universe; we breathe it in and out without knowing.' },
-  { name: 'Elemental gold', text: 'The purest, most fixed part of every compound: a grain of it at the centre of every being in the three kingdoms. This is the gold of the wise.' },
-  { name: 'Metallic gold', text: 'The bright, unchanging metal that the world prizes, and the one most perfectly "cooked" by nature.' },
-];
-
-export const STAGES = [
-  { k: 'nigredo', latin: 'Nigredo', en: 'Blackening', meaning: 'Putrefaction. The old form dies so that its seed can be freed.', inner: 'Facing the shadow: loss, confusion, the parts of yourself you avoid.', question: 'What has to die for something new to begin?' },
-  { k: 'cauda', latin: 'Cauda pavonis', en: 'The peacock\'s tail', meaning: 'A play of colours across the dark matter.', inner: 'First signs of life after a hard stretch; moods and possibilities flickering.', question: 'Which small colour has appeared in your darker season?' },
-  { k: 'albedo', latin: 'Albedo', en: 'Whitening', meaning: 'Washing. The matter is purified to white.', inner: 'Clarity and calm: the reflective, lunar mind.', question: 'What has become clear that was muddy a month ago?' },
-  { k: 'citrinitas', latin: 'Citrinitas', en: 'Yellowing', meaning: 'Dawn: the white begins to take colour.', inner: 'Solar awareness wakes; insight turns toward action.', question: 'What does your clarity want you to do?' },
-  { k: 'rubedo', latin: 'Rubedo', en: 'Reddening', meaning: 'Completion: the Red Stone.', inner: 'Integration: spirit and body at one, the work carried into life.', question: 'What have you finished becoming, and who can it serve?' },
-] as const;
-
-// --- The Tree of Life -------------------------------------------------------------------------
-
-export const SEPHIROTH: { i: number; name: string; en: string; ruler: string; n: N | null; x: number; y: number }[] = [
-  { i: 1, name: 'Kether', en: 'Crown', ruler: 'the undivided light', n: null, x: 232, y: 50 },
-  { i: 2, name: 'Chokmah', en: 'Wisdom', ruler: 'the zodiac', n: null, x: 327, y: 106 },
-  { i: 3, name: 'Binah', en: 'Understanding', ruler: 'Saturn', n: 8, x: 137, y: 106 },
-  { i: 4, name: 'Chesed', en: 'Mercy', ruler: 'Jupiter', n: 3, x: 327, y: 220 },
-  { i: 5, name: 'Geburah', en: 'Severity', ruler: 'Mars', n: 9, x: 137, y: 220 },
-  { i: 6, name: 'Tiphareth', en: 'Beauty', ruler: 'the Sun', n: 1, x: 232, y: 276 },
-  { i: 7, name: 'Netzach', en: 'Victory', ruler: 'Venus', n: 6, x: 327, y: 334 },
-  { i: 8, name: 'Hod', en: 'Splendour', ruler: 'Mercury', n: 5, x: 137, y: 334 },
-  { i: 9, name: 'Yesod', en: 'Foundation', ruler: 'the Moon', n: 2, x: 232, y: 392 },
-  { i: 10, name: 'Malkuth', en: 'Kingdom', ruler: 'the Earth', n: null, x: 232, y: 492 },
-];
-export const PATHS: [number, number][] = [
-  [1, 2], [1, 3], [1, 6], [2, 3], [2, 4], [2, 6], [3, 5], [3, 6], [4, 5], [4, 6], [4, 7],
-  [5, 6], [5, 8], [6, 7], [6, 8], [6, 9], [7, 8], [7, 9], [7, 10], [8, 9], [8, 10], [9, 10],
-];
-export const WORLDS: { name: string; en: string; el: ElementK; mind: string; y0: number; y1: number }[] = [
-  { name: 'Atziluth', en: 'Archetypal', el: 'fire', mind: 'pure divinity', y0: 0, y1: 156 },
-  { name: 'Briah', en: 'Creative', el: 'air', mind: 'the mental world', y0: 156, y1: 362 },
-  { name: 'Yetzirah', en: 'Formative', el: 'water', mind: 'the astral, subconscious', y0: 362, y1: 440 },
-  { name: 'Assiah', en: 'Material', el: 'earth', mind: 'the physical world', y0: 440, y1: 540 },
-];
-
-// --- Works ---------------------------------------------------------------------------------------
-
-export interface Step { title: string; how?: string; why: string; touches?: Essential[] }
-export interface Work {
-  id: string; title: string; latin?: string; tier?: Tier; time?: string; purpose: string;
-  steps: Step[]; cautions?: string[]; notes?: string[];
-}
 
 /** Plants in Culpeper's lists that are poisonous if swallowed: marked, never removed. */
 export const POISONOUS = new Set(['celandine', 'columbine', 'pennyroyal', 'periwinkle', 'tobacco', 'comfrey', 'holly', 'ivy', 'nightshade', 'yew']);

@@ -1,43 +1,25 @@
 import { useMemo, useRef, useState } from 'react';
-import type { CSSProperties, ReactNode } from 'react';
+import type { CSSProperties } from 'react';
 import type { N, Self, Profile } from '../lib/num';
 import { sky, vedicDay, nextChange, WEEKDAY_RULER, type Place } from '../lib/astro';
 import { NUM, WEEKDAY } from '../data/numbers';
 import { birthSky } from '../lib/model';
-import {
-  OPERATIONS, ELEMENTS, ESSENTIALS, PLANETS7, P7, STAGES, HAND, ORES, GOLDS, POISONOUS,
-  fraction, opIndex, type Essential, type ElementK, type MetalKey,
-} from '../data/alchemy';
-import { BOOK, WORKS, STAGE_HEADS, type Block, type FigId, type StageK } from '../data/book';
-import {
-  Embers, OperationWheel, EssentialsTree, ElementsSquare, ElementSpiral, TreeOfLife, FireCycle, MetalChip,
-  WorkCard, ScrollProgress, Glyph, EL_COLOR,
-} from '../components/opus';
+import { OPERATIONS, ELEMENTS, ESSENTIALS, PLANETS7, P7, POISONOUS, fraction, opIndex, type Essential, type ElementK } from '../data/alchemy';
+import { PROCESSES, GROUPS, OILS, GLOSSARY, FIRES, type GroupK, type Tone, type Process } from '../data/processes';
+import { Embers, OperationWheel, EssentialsTree, MetalChip, ProcessCard, ScrollProgress, Glyph, EL_COLOR } from '../components/opus';
 import { hm } from '../components/bits';
 import { pc } from '../components/viz';
 import '../opus.css';
+import '../opus-read.css';
 
-const tone = (k: StageK) => ({ '--stage': `var(--${k})`, '--stage-ink': `var(--${k}-ink)` }) as CSSProperties;
+const tone = (k: Tone) => ({ '--stage': `var(--${k})`, '--stage-ink': `var(--${k}-ink)` }) as CSSProperties;
 const goTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
 const shortDay = (d: Date) => d.toLocaleDateString([], { weekday: 'short' });
-
-/** Work numbers in reading order, as they appear through the book. */
-const WORK_NO: Record<string, number> = (() => {
-  const out: Record<string, number> = {};
-  let i = 0;
-  for (const ch of BOOK) for (const b of ch.blocks) if (b.k === 'work') out[b.id] = ++i;
-  return out;
-})();
-
-const FIRES = [
-  { n: 1, latin: 'Balneum Mariae', name: 'The Bath of Mary', heat: 'never above 100 °C', text: 'A double boiler: the vessel stands in water heated by the furnace, so its contents can never scorch. Some say it was devised by a Jewish adept, Mary the Prophetess, around 500 CE; others that the name comes from mare, the sea.', use: 'Delicate components; alcohol is rectified in a water bath.' },
-  { n: 2, latin: 'Balneum Cineris', name: 'The ash bath', heat: 'above boiling, evenly spread', text: 'The matter is set in the ash pit and heated hotter still; the ashes insulate and spread the heat around the vessel.', use: 'Heats beyond boiling water, still even.' },
-  { n: 3, latin: 'Balneum Arenae', name: 'The sand bath', heat: 'higher, without hot spots', text: 'Set up like the water bath but holding a higher heat; it heats evenly, avoids hot spots, and at high heats supports a vessel that might otherwise deform.', use: 'Oils and substances boiling above water.' },
-  { n: 4, latin: 'Balneum Ignis', name: 'Bathed in flame', heat: 'as hot as the furnace will go', text: 'A naked flame, as hot as you can make it in your furnace.', use: 'Calcinations and fusions.' },
-];
+const NUMBER: Record<string, number> = Object.fromEntries(PROCESSES.map((p, i) => [p.id, i + 1]));
 
 export function Alchemy({ self, profile, now, place }: { self: Self; profile: Profile; now: Date; place: Place }) {
   const root = useRef<HTMLDivElement>(null);
+  const list = useRef<HTMLDivElement>(null);
   const minute = Math.floor(now.getTime() / 60000);
   const s = useMemo(() => sky(now), [minute]);
   const mI = opIndex(s.moon), sI = opIndex(s.sun);
@@ -47,7 +29,8 @@ export function Alchemy({ self, profile, now, place }: { self: Self; profile: Pr
   const dayN = WEEKDAY_RULER[vd.weekday];
   const dp = P7[dayN]!;
   const dayHours = vd.horas.filter((h) => h.ruler === dayN);
-  const [stage, setStage] = useState<(typeof STAGES)[number]['k']>('nigredo');
+  const [group, setGroup] = useState<GroupK | 'all'>('all');
+  const [query, setQuery] = useState('');
 
   const p = self.psychic.root, d = self.destiny.root, nm = self.name?.reading.root ?? null;
   const birthWd = new Date(self.birth.y, self.birth.m - 1, self.birth.d, 12).getDay();
@@ -56,48 +39,16 @@ export function Alchemy({ self, profile, now, place }: { self: Self; profile: Pr
     ...(nm ? [{ k: 'Name', n: nm }] : []),
     { k: `Born on a ${WEEKDAY[birthWd]}`, n: WEEKDAY_RULER[birthWd] },
   ];
-  const mine = [...new Set(stars.map((x) => x.n))];
   const bs = useMemo(() => birthSky(profile, self), [profile, self]);
   const bSun = opIndex(bs.at.sun), bEl = OPERATIONS[bSun].el;
-  const bMoonA = opIndex(bs.start.moon), bMoonB = opIndex(bs.end.moon);
   const who = profile.name ? profile.name.split(' ')[0] : 'you';
 
-  const fig = (id: FigId): ReactNode => {
-    switch (id) {
-      case 'essentials': return <figure className="figure opus-fig"><EssentialsTree /><figcaption>The book’s diagram: from the Prima Materia to the fixed and the volatile, the four Elements, and the Three Essentials.</figcaption></figure>;
-      case 'elements': return <figure className="figure opus-fig"><ElementsSquare /><figcaption>Aristotle’s Elements: Fire hot and dry, Earth dry and cold, Water cold and wet, Air wet and hot.</figcaption></figure>;
-      case 'spiral': return <figure className="figure opus-fig"><ElementSpiral /><figcaption>The rotation of the Elements: a corkscrew drawing them to a centre of balance, the Quintessence.</figcaption></figure>;
-      case 'firecycle': return <figure className="figure opus-fig wide"><FireCycle /><figcaption>After the book’s diagram from The Golden Chain of Homer.</figcaption></figure>;
-      case 'tree': return <figure className="figure opus-fig tree"><TreeOfLife mine={mine} /><figcaption>The Tree of Life in its Four Worlds. The spheres of your planets are lit.</figcaption></figure>;
-      case 'zodiac': return <Zodiac mI={mI} />;
-      case 'fires': return <Fires />;
-      case 'week': return <SevenWeek today={vd.weekday} />;
-      case 'fractions': return <TwelveFractions />;
-      case 'hand': return <Hand />;
-      case 'ores': return <Ores />;
-      case 'golds': return <Golds />;
-      case 'stages': return <StageSelector stage={stage} setStage={setStage} />;
-      case 'herbs': return <Herbs today={vd.weekday} />;
-      case 'planets': return <PlanetTable today={vd.weekday} />;
-    }
-  };
-
-  const block = (b: Block, i: number): ReactNode => {
-    switch (b.k) {
-      case 'p': return <p key={i} className="book-p">{b.t}</p>;
-      case 'h': return <header key={i} className="book-h">{b.eyebrow && <span className="eyebrow">{b.eyebrow}</span>}<h4>{b.t}</h4></header>;
-      case 'quote': return <blockquote key={i} className="book-quote"><p>“{b.t}”</p><cite>{b.by}</cite></blockquote>;
-      case 'list': {
-        const L = b.ordered ? 'ol' : 'ul';
-        return <div key={i} className="book-list">{b.title && <span className="eyebrow">{b.title}</span>}<L>{b.items.map((x) => <li key={x}>{x}</li>)}</L></div>;
-      }
-      case 'cards': return <div key={i} className="book-cards">{b.items.map((c) => <article key={c.title} className="mini-card"><h4>{c.title}{c.sub && <span className="latin muted"> · {c.sub}</span>}</h4><p className="small">{c.text}</p></article>)}</div>;
-      case 'caution': return <div key={i} className="danger" role="note"><span className="danger-icon" aria-hidden="true">!</span><div><h3>The book warns</h3><p>{b.t}</p></div></div>;
-      case 'claims': return <Claims key={i} b={b} />;
-      case 'work': return <WorkCard key={i} w={WORKS[b.id]} index={`Work ${WORK_NO[b.id]}`} />;
-      case 'fig': return <div key={i} className="book-fig">{fig(b.id)}</div>;
-    }
-  };
+  const q = query.trim().toLowerCase();
+  const matches = (x: Process) => !q || [x.title, x.aka, x.short, x.what, x.helps].some((t) => t?.toLowerCase().includes(q));
+  const shown = GROUPS.filter((g) => group === 'all' || g.k === group)
+    .map((g) => ({ g, items: PROCESSES.filter((x) => x.group === g.k && matches(x)) }))
+    .filter((x) => x.items.length);
+  const setAll = (open: boolean) => list.current?.querySelectorAll('details').forEach((el) => { el.open = open; });
 
   return (
     <div className="opus" ref={root}>
@@ -107,172 +58,215 @@ export function Alchemy({ self, profile, now, place }: { self: Self; profile: Pr
       <section className="opus-hero" aria-labelledby="opus-title">
         <Embers />
         <div className="opus-hero-text">
-          <span className="eyebrow">Alchemy · Robert Allen Bartlett, <i>Real Alchemy: A Primer of Practical Alchemy</i> (2006)</span>
+          <span className="eyebrow">Practical alchemy · after Robert Allen Bartlett, <i>Real Alchemy</i></span>
           <h1 id="opus-title"><span className="gold">The Great Work</span></h1>
           <p className="lede">
-            The whole book, chapter by chapter, as it gives it: <span className="latin">separate, purify, reunite.</span> Every process is set out step by step with the purpose of each step, and the Moon chooses the operation of the day.
+            {PROCESSES.length} alchemical processes in plain English: what each one is, what it helps with, and how to do it, step by step.
           </p>
           <div className="today-pill" style={tone('citrin')}>
             <span className="eyebrow">Moon in {op.sign} · today’s operation</span>
             <span className="op-mini gold">{op.name}</span>
           </div>
-          <nav className="chapter-chips" aria-label="The four stages">
-            {STAGE_HEADS.map((c) => (
-              <button key={c.k} style={tone(c.k)} onClick={() => goTo(`stage-${c.k}`)}>
-                <i aria-hidden="true" />{c.roman} · {c.latin}
-              </button>
-            ))}
-          </nav>
+          <div className="hero-actions">
+            <button className="btn primary" onClick={() => goTo('opus-processes')}>See the processes</button>
+            <button className="btn ghost" onClick={() => goTo('opus-basics')}>How alchemy works</button>
+          </div>
         </div>
         <OperationWheel moon={s.moon} sun={s.sun} />
       </section>
-      <p className="note">The wheel of the book’s twelve operations, Aries at the top. The pale disc is the Moon, which picks the day’s operation; the gold disc the Sun, which picks the month’s. Signs here are tropical, as in Western alchemy, so they run about 24° ahead of the sidereal signs on the Today page.</p>
+      <p className="note">The wheel shows the book’s twelve operations, one for each zodiac sign. The pale dot is the Moon, which sets the operation of the day; the gold dot is the Sun, which sets the operation of the month.</p>
 
       {/* --------------------------------------------------------------- today */}
       <section className="section" aria-labelledby="opus-today">
-        <header className="sub-head"><span className="eyebrow">Today in the Work</span><h3 id="opus-today">{WEEKDAY[vd.weekday]}: {op.name} under a {s.waxing ? 'waxing' : 'waning'} Moon</h3></header>
+        <header className="sub-head"><span className="eyebrow">Today</span><h3 id="opus-today">{WEEKDAY[vd.weekday]}: a day for {op.name.toLowerCase()}</h3></header>
         <div className="today-op" style={tone('citrin')}>
           <article className="op-card">
             <div className="op-top">
               <span className="op-sign" style={{ color: EL_COLOR[op.el] }}>{op.glyph}{'︎'}</span>
               <div>
-                <span className="eyebrow">Moon in {op.sign} · {ELEMENTS[op.el].name} · {op.mode} · {op.planet} {op.pol}</span>
+                <span className="eyebrow">The Moon is in {op.sign}</span>
                 <h2 className="op-name gold">{op.name}</h2>
-                {until && <span className="small muted">Until {shortDay(until)} {hm(until)}, then {OPERATIONS[(mI + 1) % 12].name}</span>}
+                {until && <span className="small muted">Until {shortDay(until)} {hm(until)}, then {OPERATIONS[(mI + 1) % 12].name.toLowerCase()}</span>}
               </div>
             </div>
             <dl className="op-rows">
-              <div><dt>In the vessel</dt><dd>{op.what}</dd></div>
-              <div><dt>Purpose</dt><dd>{op.why}</dd></div>
-              <div><dt>In you</dt><dd>{op.inner}</dd></div>
+              <div><dt>What it is</dt><dd>{op.what}</dd></div>
+              <div><dt>What it does</dt><dd>{op.why}</dd></div>
+              <div><dt>In your life</dt><dd>{op.inner}</dd></div>
             </dl>
             <p className="op-prompt latin">{op.prompt}</p>
           </article>
           <div className="today-side">
             <article className="mini-card">
-              <span className="eyebrow">The Moon’s disposition</span>
-              <h4>{s.waxing ? 'Waxing: enrich and exalt' : 'Waning: separate the pure from the impure'}</h4>
+              <span className="eyebrow">The Moon is {s.waxing ? 'waxing' : 'waning'}</span>
+              <h4>{s.waxing ? 'A time to build up and strengthen' : 'A time to separate and clean'}</h4>
               <p className="small muted">
                 {s.waxing
-                  ? 'The book: good for enriching an essential by circulations or distillations; its magnetic pull draws things up, volatilising, exalting and spiritualising them.'
-                  : 'The book: good for separating the pure from the impure, by distillation, extraction or calcination; like the dying moonlight, the matter gives up its essence.'}
-                {' '}{Math.round(s.illum * 100)}% lit.
+                  ? 'The book says a waxing Moon draws things upward. It favours circulating and distilling to strengthen an elixir.'
+                  : 'The book says a waning Moon favours separating the pure from the impure: extracting, distilling and burning to ash.'}
               </p>
             </article>
             <article className="mini-card">
-              <span className="eyebrow">The day’s planet</span>
+              <span className="eyebrow">Today’s planet</span>
               <div className="day-planet">
                 <MetalChip k={dp.metalKey} label={dp.metal} />
                 <div>
                   <h4><span style={pc(dayN)} className="pc">{dp.glyph}{'︎'} {dp.planet}</span> · {dp.metal}</h4>
-                  <p className="small muted">Organ: {dp.organ.toLowerCase()} · Sephira: {dp.sephira}</p>
+                  <p className="small muted">Rules the {dp.organ.toLowerCase()}</p>
                 </div>
               </div>
-              <p className="small">Its herbs (the book’s appendix): <HerbList list={dp.herbs} />.</p>
-              <p className="small muted">
-                {dp.planet}’s hours today: {dayHours.map((h) => `${hm(h.start)}–${hm(h.end)}`).join(', ')}. The book: work on the day whose planet rules the herb, preferably within the hour after sunrise.
-              </p>
+              <p className="small">A good day to start work with {dp.planet}’s herbs, such as {dp.herbs.filter((h) => !POISONOUS.has(h)).slice(0, 4).join(', ')}.</p>
+              <p className="small muted">Best hour: {dayHours[0] ? `${hm(dayHours[0].start)}–${hm(dayHours[0].end)}` : 'the first after sunrise'}, the first after sunrise. {dp.planet}’s other hours today: {dayHours.slice(1).map((h) => `${hm(h.start)}–${hm(h.end)}`).join(', ')}.</p>
             </article>
             <article className="mini-card">
-              <span className="eyebrow">The month’s operation</span>
-              <h4>Sun in {monthOp.sign}: {monthOp.name}</h4>
+              <span className="eyebrow">This month</span>
+              <h4>The Sun is in {monthOp.sign}: {monthOp.name.toLowerCase()}</h4>
               <p className="small muted">{monthOp.why}</p>
             </article>
           </div>
         </div>
       </section>
 
-      {/* --------------------------------------------------------------- interior stars */}
+      {/* --------------------------------------------------------------- your metals */}
       <section className="section" aria-labelledby="opus-stars">
         <header className="sub-head">
-          <span className="eyebrow">Interior stars</span>
-          <h3 id="opus-stars">{profile.name ? `The metals of ${who}` : 'Your metals'}</h3>
-          <p>The book calls the planetary representatives in man’s occult anatomy our “Interior Stars”. Each of your numbers has its planet, and each of the seven planets its metal, organ and sphere on the Tree. The qualities are the mental effects the book reports for each metal’s oil.</p>
+          <span className="eyebrow">Your metals</span>
+          <h3 id="opus-stars">{profile.name ? `The planets and metals of ${who}` : 'Your planets and metals'}</h3>
+          <p>Each of your numbers has a planet, and each planet has its metal. The book calls these planets inside us our “interior stars”. The qualities listed are the mental effects the book reports for each metal.</p>
         </header>
         <div className="stars">
           {stars.map((x) => {
             const pl = P7[x.n];
             return (
               <article key={x.k} className="star-card" style={pc(x.n)}>
-                <MetalChip k={pl ? pl.metalKey : 'shadow'} size={64} label={pl ? pl.metal : 'No metal'} />
+                <MetalChip k={pl ? pl.metalKey : 'shadow'} size={56} label={pl ? pl.metal : 'No metal'} />
                 <span className="eyebrow">{x.k}</span>
                 <h4><span className="num pc">{x.n}</span> {NUM[x.n].planet}</h4>
-                {pl ? (
-                  <>
-                    <p className="metal-name">{pl.metal}</p>
-                    <p className="small muted">{pl.sephira}, {pl.sephiraEn.toLowerCase()} · {pl.organ.toLowerCase()}</p>
-                    <p className="small">{pl.quality}</p>
-                  </>
-                ) : (
-                  <p className="small muted">{NUM[x.n].planet} is a lunar node, not one of the seven planets of the book’s table, so it has no metal there.</p>
-                )}
+                {pl
+                  ? <><p className="metal-name">{pl.metal}</p><p className="small">{pl.quality}</p></>
+                  : <p className="small muted">{NUM[x.n].planet} is not one of the seven planets in the book’s table, so it has no metal.</p>}
               </article>
             );
           })}
         </div>
         <div className="birth-el" style={{ '--el': EL_COLOR[bEl] } as CSSProperties}>
-          <Glyph k={bEl} size={54} />
+          <Glyph k={bEl} size={48} />
           <div>
-            <span className="eyebrow">Born with the Sun in {OPERATIONS[bSun].sign} (tropical)</span>
+            <span className="eyebrow">Your element</span>
             <h4>{ELEMENTS[bEl].name}: {ELEMENTS[bEl].qualities.toLowerCase()}</h4>
-            <p className="small">
-              {ELEMENTS[bEl].nature} On the psychological level, {ELEMENTS[bEl].mind.toLowerCase()}. The book: each person is born a zodiac type, predisposed to that sign’s temperament and organ weakness. Your birth sign’s operation is <b>{OPERATIONS[bSun].name}</b>
-              {bMoonA === bMoonB || bs.exact
-                ? <>, your birth Moon’s is <b>{OPERATIONS[bMoonA].name}</b>.</>
-                : <>; your birth Moon’s is <b>{OPERATIONS[bMoonA].name}</b> or <b>{OPERATIONS[bMoonB].name}</b> (a birth time would settle it).</>}
-            </p>
+            <p className="small">You were born with the Sun in {OPERATIONS[bSun].sign}, a {ELEMENTS[bEl].name.toLowerCase()} sign. {ELEMENTS[bEl].nature} The book says the sign you are born under shapes your temperament and the organs most likely to need care.</p>
           </div>
         </div>
       </section>
 
-      {/* --------------------------------------------------------------- contents */}
-      <section className="section" aria-labelledby="opus-contents">
-        <header className="sub-head"><span className="eyebrow">Contents</span><h3 id="opus-contents">The book, chapter by chapter</h3><p>{Object.keys(WORKS).length} works, every one in numbered steps with the purpose of each step.</p></header>
-        <div className="toc">
-          {STAGE_HEADS.map((h) => (
-            <div key={h.k} className="toc-stage" style={tone(h.k)}>
-              <span className="eyebrow"><i aria-hidden="true" />{h.roman} · {h.latin}</span>
-              <ol>
-                {BOOK.filter((c) => c.stage === h.k).map((c) => (
-                  <li key={c.id}><button onClick={() => goTo(`book-${c.id}`)}><span className="toc-n">{c.n}</span>{c.title}</button></li>
+      {/* --------------------------------------------------------------- basics */}
+      <section className="section" id="opus-basics" aria-labelledby="opus-basics-h">
+        <header className="sub-head"><span className="eyebrow">Before you begin</span><h3 id="opus-basics-h">How alchemy works, in four ideas</h3></header>
+        <div className="ideas">
+          <article className="idea" style={tone('citrin')}>
+            <span className="idea-n">1</span>
+            <h4>Everything has three parts</h4>
+            <p>Alchemy says every plant, mineral and person has a body, a soul and a spirit. It calls them <b>Salt</b>, <b>Sulfur</b> and <b>Mercury</b>. In a plant, the Salt is the mineral left in its ash, the Sulfur is its essential oil, and the Mercury is the alcohol that fermentation releases.</p>
+            <div className="idea-glyphs">
+              {(['salt', 'sulfur', 'mercury'] as Essential[]).map((k) => <span key={k}><Glyph k={k} size={22} />{ESSENTIALS[k].name} · {ESSENTIALS[k].aspect}</span>)}
+            </div>
+          </article>
+          <article className="idea" style={tone('albedo')}>
+            <span className="idea-n">2</span>
+            <h4>Separate, purify, reunite</h4>
+            <p>Almost every process follows the same pattern. Take the substance apart into its three parts, clean each one, then put them back together. The result, the book says, is stronger and purer than what you started with.</p>
+          </article>
+          <article className="idea" style={tone('nigredo')}>
+            <span className="idea-n">3</span>
+            <h4>Work with the sky</h4>
+            <p>A waxing Moon is for building up and strengthening; a waning Moon is for separating and cleaning. Start work with a herb on the day of its ruling planet, ideally in the hour after sunrise. The Today panel above does this for you.</p>
+          </article>
+          <article className="idea" style={tone('rubedo')}>
+            <span className="idea-n">4</span>
+            <h4>The work changes you too</h4>
+            <p>The book insists your state of mind matters: work calmly, with intention. Each operation in the flask has a match in your inner life. In its words, “you are the lead which is transmuted into pure gold.”</p>
+          </article>
+        </div>
+        <div className="cols" style={{ alignItems: 'center' }}>
+          <figure className="figure opus-fig" style={tone('citrin')}><EssentialsTree /><figcaption>How the three parts arise: the four elements pair up into Salt, Mercury and Sulfur.</figcaption></figure>
+          <div className="basics-side">
+            <span className="eyebrow">The four kinds of heat</span>
+            <div className="fires-mini">
+              {FIRES.map((f) => (
+                <div key={f.n} className="fire-row" style={{ '--heat': f.n } as CSSProperties}>
+                  <span className="heat" aria-hidden="true"><i /></span>
+                  <div><b>{f.name}</b> <span className="muted small">· {f.heat}</span><p className="small muted">{f.use}</p></div>
+                </div>
+              ))}
+            </div>
+            <p className="small muted">Always start with the gentlest heat that will do the job, and raise it slowly.</p>
+          </div>
+        </div>
+        <div className="glossary">
+          <span className="eyebrow">Words you will meet</span>
+          <dl>
+            {GLOSSARY.map((g) => <div key={g.word}><dt>{g.word}</dt><dd>{g.meaning}</dd></div>)}
+          </dl>
+        </div>
+      </section>
+
+      {/* --------------------------------------------------------------- processes */}
+      <section className="section" id="opus-processes" aria-labelledby="opus-processes-h">
+        <header className="sub-head">
+          <span className="eyebrow">The processes</span>
+          <h3 id="opus-processes-h">{PROCESSES.length} processes, from a simple tincture to the Philosopher’s Stone</h3>
+          <p>Open any process to see what it is, what it helps with, what you need, and each step with its reason. The badges show how hard the book considers it.</p>
+        </header>
+        <div className="proc-tools">
+          <div className="filters" role="group" aria-label="Show a family of processes">
+            <button aria-pressed={group === 'all'} onClick={() => setGroup('all')}>All</button>
+            {GROUPS.map((g) => (
+              <button key={g.k} aria-pressed={group === g.k} style={tone(g.tone)} onClick={() => setGroup(g.k)}><i aria-hidden="true" />{g.title}</button>
+            ))}
+          </div>
+          <div className="proc-search">
+            <label htmlFor="proc-q" className="sr-only">Search the processes</label>
+            <input id="proc-q" type="search" placeholder="Search, e.g. salt, gold, blood" value={query} onChange={(e) => setQuery(e.target.value)} />
+            <button className="btn ghost sm" onClick={() => setAll(true)}>Open all</button>
+            <button className="btn ghost sm" onClick={() => setAll(false)}>Close all</button>
+          </div>
+        </div>
+        <div ref={list} className="proc-groups">
+          {shown.length === 0 && <p className="muted">No process matches “{query}”.</p>}
+          {shown.map(({ g, items }) => (
+            <div key={g.k} className="proc-group" style={tone(g.tone)}>
+              <header className="proc-group-head">
+                <h4>{g.title}</h4>
+                <p>{g.intro}</p>
+              </header>
+              <div className="proc-list">
+                {items.map((x) => (
+                  <ProcessCard key={x.id} p={x} n={NUMBER[x.id]}
+                    extra={x.extra === 'week' ? <SevenWeek today={vd.weekday} /> : x.extra === 'fractions' ? <TwelveFractions /> : x.extra === 'oils' ? <Oils /> : undefined} />
                 ))}
-              </ol>
+              </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* --------------------------------------------------------------- the book */}
-      {STAGE_HEADS.map((h) => (
-        <section key={h.k} className="stage" id={`stage-${h.k}`} style={tone(h.k)} aria-labelledby={`stage-${h.k}-h`}>
-          <header className="stage-head">
-            <span className="roman" aria-hidden="true">{h.roman}</span>
-            <span className="latin stage-latin">{h.latin}</span>
-            <h2 id={`stage-${h.k}-h`}>{h.title}</h2>
-            <p>{h.lede}</p>
-          </header>
-          {BOOK.filter((c) => c.stage === h.k).map((c) => (
-            <article key={c.id} className="chapter" id={`book-${c.id}`} aria-labelledby={`book-${c.id}-h`}>
-              <header className="chapter-head">
-                <span className="eyebrow">{c.n}</span>
-                <h3 id={`book-${c.id}-h`}>{c.title}</h3>
-              </header>
-              {c.blocks.map(block)}
-            </article>
-          ))}
-        </section>
-      ))}
+      {/* --------------------------------------------------------------- reference */}
+      <section className="section" aria-labelledby="opus-ref">
+        <header className="sub-head">
+          <span className="eyebrow">Reference</span>
+          <h3 id="opus-ref">Planets, metals and herbs</h3>
+          <p>The book’s tables, for choosing which herb or metal belongs to which planet and day. The herbs are mostly from Nicholas Culpeper’s 17th-century herbal.</p>
+        </header>
+        <PlanetTable today={vd.weekday} />
+        <Herbs today={vd.weekday} />
+      </section>
 
       {/* --------------------------------------------------------------- close */}
       <section className="opus-close" style={tone('rubedo')}>
-        <span className="latin stage-latin">Ora et labora</span>
-        <h2><span className="gold">You are the lead</span></h2>
-        <p className="lede">The book: the attitude of the artist makes alchemy the Divine Art, and the true subject of the Great Work is the worker. As you work on your matter, it works on you.</p>
-        <div className="today-pill" style={tone('citrin')}>
-          <span className="eyebrow">Today’s operation, in you</span>
-          <span className="small">{op.inner}</span>
-        </div>
-        <p className="note">After Robert Allen Bartlett, <i>Real Alchemy: A Primer of Practical Alchemy</i> (Quinquangle Press, 2006), restated chapter by chapter. Quotations are from public-domain texts. The wheel, the day’s reading and your interior stars apply the book’s correspondences to the live sky and your numbers.</p>
+        <h2><span className="gold">Start simply</span></h2>
+        <p className="lede">The book’s advice is to begin with the simple plant elixir and the Seven Basics, learn the theory before the practice, and move on to harder work only as your skill grows. As you work on your material, it works on you.</p>
+        <button className="btn primary" onClick={() => { setGroup('plants'); setQuery(''); goTo('opus-processes'); }}>Begin with the plant medicines</button>
+        <p className="note">After Robert Allen Bartlett, <i>Real Alchemy: A Primer of Practical Alchemy</i> (Quinquangle Press, 2006). Effects and warnings are as the book gives them. The book advises consulting a licensed physician before taking any herbal preparation.</p>
       </section>
     </div>
   );
@@ -297,7 +291,7 @@ function Herbs({ today }: { today: number }) {
           </article>
         );
       })}
-      <p className="note"><sup className="poison">†</sup> poisonous if swallowed. The book’s own instruction stands for every herb: consult a licensed physician before consuming herbal preparations.</p>
+      <p className="note"><sup className="poison">†</sup> Poisonous if swallowed.</p>
     </div>
   );
 }
@@ -306,7 +300,7 @@ function PlanetTable({ today }: { today: number }) {
   const order = [0, 1, 2, 3, 4, 5, 6].map((wd) => PLANETS7.find((x) => x.weekday === wd)!);
   return (
     <div className="week-rows planet-table" role="table" aria-label="Planets, metals, organs and weekdays">
-      <div role="row" className="head"><span role="columnheader">Planet</span><span role="columnheader">Metal</span><span role="columnheader">Organ</span><span role="columnheader">Weekday</span></div>
+      <div role="row" className="head"><span role="columnheader">Planet</span><span role="columnheader">Metal</span><span role="columnheader">Organ</span><span role="columnheader">Day</span></div>
       {order.map((pl) => (
         <div key={pl.planet} role="row" className={pl.weekday === today ? 'today' : ''} style={pc(pl.n)}>
           <span role="cell" className="pl"><b className="pc">{pl.glyph}{'︎'} {pl.planet}</b></span>
@@ -323,8 +317,8 @@ function SevenWeek({ today }: { today: number }) {
   const order = [0, 1, 2, 3, 4, 5, 6].map((wd) => PLANETS7.find((x) => x.weekday === wd)!);
   return (
     <div className="week">
-      <span className="eyebrow">The Seven Basics, one elixir for each day</span>
-      <div className="week-rows" role="table" aria-label="The seven planetary days with their herbs and metals">
+      <span className="eyebrow">Which herb for which day</span>
+      <div className="week-rows" role="table" aria-label="The seven days with their planets, herbs and organs">
         {order.map((pl) => (
           <div key={pl.planet} role="row" className={pl.weekday === today ? 'today' : ''} style={pc(pl.n)}>
             <span role="cell" className="wd">{WEEKDAY[pl.weekday]}</span>
@@ -334,44 +328,7 @@ function SevenWeek({ today }: { today: number }) {
           </div>
         ))}
       </div>
-      <p className="note"><sup className="poison">†</sup> poisonous if swallowed.</p>
-    </div>
-  );
-}
-
-function Zodiac({ mI }: { mI: number }) {
-  return (
-    <div className="twelve">
-      {OPERATIONS.map((o, i) => (
-        <article key={o.sign} className={`op-tile${i === mI ? ' now' : ''}`} aria-current={i === mI ? 'true' : undefined}>
-          <div className="op-tile-top">
-            <span className="op-glyph" style={{ color: EL_COLOR[o.el] }}>{o.glyph}{'︎'}</span>
-            <span className="eyebrow">{o.sign} · {o.planet} {o.pol} · {ELEMENTS[o.el].name} · {o.mode}</span>
-            {i === mI && <span className="tag yes">Moon here now</span>}
-          </div>
-          <h4>{o.name}</h4>
-          <p className="small">{o.what}</p>
-          <p className="why-line small"><b>Purpose</b> {o.why}</p>
-          <p className="small muted"><b>In you:</b> {o.inner}</p>
-        </article>
-      ))}
-    </div>
-  );
-}
-
-function Fires() {
-  return (
-    <div className="fires">
-      {FIRES.map((f) => (
-        <article key={f.n} className="fire-card" style={{ '--heat': f.n } as CSSProperties}>
-          <span className="heat" aria-hidden="true"><i /></span>
-          <span className="eyebrow">Degree {f.n} · {f.heat}</span>
-          <h4>{f.name}</h4>
-          <p className="latin muted">{f.latin}</p>
-          <p className="small">{f.text}</p>
-          <p className="small muted"><b>For:</b> {f.use}</p>
-        </article>
-      ))}
+      <p className="note"><sup className="poison">†</sup> Poisonous if swallowed.</p>
     </div>
   );
 }
@@ -380,101 +337,29 @@ function TwelveFractions() {
   const els: ElementK[] = ['fire', 'air', 'water', 'earth'];
   const ess: Essential[] = ['sulfur', 'mercury', 'salt'];
   return (
-    <div className="fractions" role="table" aria-label="The twelve fractions of rain water and their signs">
+    <div className="fractions" role="table" aria-label="The twelve parts of rainwater and their signs">
       <span role="row" className="frow head"><span role="columnheader" />{els.map((e) => <span role="columnheader" key={e} style={{ color: EL_COLOR[e] }}><Glyph k={e} size={16} /> {ELEMENTS[e].name}</span>)}</span>
       {ess.map((x) => (
         <span role="row" className="frow" key={x}>
           <span role="rowheader"><Glyph k={x} size={16} /> {ESSENTIALS[x].name}</span>
-          {els.map((e) => { const o = fraction(e, x); return <span role="cell" key={e}><b>{o.glyph}{'︎'} {o.sign}</b><small>{ESSENTIALS[x].name} of {ELEMENTS[e].name} of Water</small></span>; })}
+          {els.map((e) => { const o = fraction(e, x); return <span role="cell" key={e}><b>{o.glyph}{'︎'} {o.sign}</b><small>{ESSENTIALS[x].name} of {ELEMENTS[e].name}</small></span>; })}
         </span>
       ))}
     </div>
   );
 }
 
-function Hand() {
-  return (
-    <div className="hand">
-      {HAND.map((h) => (
-        <article key={h.salt} className="mini-card">
-          <span className="eyebrow">{h.finger} · {h.emblem}</span>
-          <h4>{h.salt} <span className="muted small">· {h.modern}</span></h4>
-          <p className="small">{h.role}</p>
-        </article>
-      ))}
-    </div>
-  );
-}
-
-function Ores() {
-  return (
-    <div className="ores">
-      {ORES.map((o) => {
-        const pl = PLANETS7.find((x) => x.planet === o.planet)!;
-        return (
-          <article key={o.planet} className="ore" style={pc(pl.n)}>
-            <MetalChip k={pl.metalKey} size={30} />
-            <div><h4><span className="pc">{pl.glyph}{'︎'}</span> {o.planet} · {pl.metal}</h4><p className="small muted">{o.ore}</p></div>
-          </article>
-        );
-      })}
-    </div>
-  );
-}
-
-function Golds() {
-  return (
-    <div className="golds">
-      {GOLDS.map((g, i) => (
-        <article key={g.name} className="gold-card">
-          <MetalChip k="gold" size={36 + i * 6} />
-          <div><h4>{g.name}</h4><p className="small muted">{g.text}</p></div>
-        </article>
-      ))}
-    </div>
-  );
-}
-
-const OIL_METAL: Record<string, MetalKey> = {
-  'Oil of Antimony': 'antimony', 'Oil of Gold': 'gold', 'Oil of Silver': 'silver', 'Oil of Mercury': 'quicksilver',
-  'Oil of Copper': 'copper', 'Oil of Iron': 'iron', 'Oil of Tin': 'tin', 'Oil of Lead': 'lead',
-};
-function Claims({ b }: { b: Extract<Block, { k: 'claims' }> }) {
+function Oils() {
   return (
     <div className="claims">
-      <span className="eyebrow">{b.title}</span>
-      {b.intro && <p className="small muted">{b.intro}</p>}
+      <span className="eyebrow">What each metal’s oil is reported to help with</span>
       <div className="claims-grid">
-        {b.items.map((it) => (
-          <article key={it.name} className="claim">
-            <MetalChip k={OIL_METAL[it.name] ?? 'shadow'} size={40} />
-            <div><h4>{it.name}</h4><p className="small">{it.text}</p></div>
+        {OILS.map((o) => (
+          <article key={o.name} className="claim">
+            <MetalChip k={o.metal} size={36} />
+            <div><h4>Oil of {o.name}</h4><p className="small">{o.text}</p></div>
           </article>
         ))}
-      </div>
-      {b.after && <p className="small muted">{b.after}</p>}
-    </div>
-  );
-}
-
-function StageSelector({ stage, setStage }: {
-  stage: (typeof STAGES)[number]['k']; setStage: (k: (typeof STAGES)[number]['k']) => void;
-}) {
-  const st = STAGES.find((x) => x.k === stage)!;
-  return (
-    <div className="stages">
-      <span className="eyebrow">The colours of the Work, and where you are in your own</span>
-      <div className="gw-bar" role="radiogroup" aria-label="Stages of the Great Work">
-        {STAGES.map((x) => (
-          <button key={x.k} role="radio" aria-checked={stage === x.k} className={`gw ${x.k}`} onClick={() => setStage(x.k)}>
-            <i aria-hidden="true" /><span className="latin">{x.latin}</span><small>{x.en}</small>
-          </button>
-        ))}
-      </div>
-      <div className="gw-detail">
-        <p><b>In the flask:</b> {st.meaning}</p>
-        <p><b>In you:</b> {st.inner}</p>
-        <p className="op-prompt latin">{st.question}</p>
       </div>
     </div>
   );
