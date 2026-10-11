@@ -59,6 +59,9 @@ function usePersistent<T>(k: string, fallback: T) {
   return [v, setV] as const;
 }
 
+/** Small per-browser conveniences (the lesson left open, calculator inputs). */
+export const useStored = <T,>(k: string, fallback: T) => usePersistent<T>(`sankhya.${k}`, fallback);
+
 export const usePeopleList = () => usePersistent<Person[]>(KEY.people, []);
 export const useActiveId = () => usePersistent<string | null>(KEY.active, null);
 export const useJournals = () => usePersistent<Journals>(KEY.journals, {});

@@ -274,3 +274,15 @@ export function guessPlace(): Place {
     return { lat: 0, lon: 0, label: 'Equator, Greenwich', source: 'zone' };
   }
 }
+
+/** The next planetary hour ruled by `ruler`, or the one running now. Looks up to `days` days ahead. */
+export function nextHora(from: Date, ruler: N, lat: number, lon: number, days = 8): Hora | null {
+  let t = from;
+  for (let i = 0; i < days; i++) {
+    const vd = vedicDay(t, lat, lon);
+    const h = vd.horas.find((x) => x.ruler === ruler && x.end > from);
+    if (h) return h;
+    t = new Date(vd.nextRise.getTime() + 60000);
+  }
+  return null;
+}

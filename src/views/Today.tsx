@@ -7,6 +7,7 @@ import { dayModel, promptsFor } from '../lib/model';
 import { Tesseract, HoraRing, pc } from '../components/viz';
 import { Planet, RelTag, PeriodTag, Row, SectionHead, hm, sentence } from '../components/bits';
 import { PlaceControl } from '../components/PlaceControl';
+import { ArtsToday } from '../components/arts';
 import { EntryForm } from './Journal';
 import type { Entry } from '../lib/store';
 
@@ -61,6 +62,13 @@ export function Today({ self, sel, setSel, place, setPlace, now, journal, saveEn
         </div>
       </section>
       <p className="note">The instrument: a four-dimensional cube whose edges along each axis take the colour of one of your four numbers and turn at a speed set by it. The outer ring is the sidereal zodiac: the larger dot is the Sun, the smaller the Moon, and the bright arc between them is the lunar day.</p>
+
+      <section className="section">
+        <SectionHead eyebrow="The four books" title={m.isToday ? 'Your four arts today' : 'Your four arts on this day'}>
+          One line from each book on this site, read for {m.isToday ? 'today' : 'this day'}: the number, the alchemical operation, the shape and the money planet. Each opens its own page.
+        </SectionHead>
+        <ArtsToday m={m} psyche={p} now={now} place={place} />
+      </section>
 
       <section className="section">
         <SectionHead eyebrow="Reading" title="This day, measured against you">

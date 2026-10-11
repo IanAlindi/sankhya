@@ -119,6 +119,7 @@ export function Method() {
           <div className="prose">
             <p>The book also prescribes powdered gems taken by mouth, fasts and other remedies. The ingestion remedies are left out: mineral powders can be harmful, and nothing here is medical advice. Colours, mantras, days and stones are offered as aids to attention.</p>
             <p>Johari asks readers not to accept his numbers blindly but to watch real people and form their own language, and never to use numerology to gain power over others. The Journal exists for that first instruction. Read your numbers as a mirror, not a sentence.</p>
+            <p>Three more books sit beside Johari’s. The Alchemy page follows Robert Allen Bartlett, <i>Real Alchemy</i> (2009). The Geometry page follows Robert Lawlor, <i>Sacred Geometry: Philosophy and Practice</i> (Thames &amp; Hudson, 1982); its constructions are redrawn and checked by the site’s own tests. The Wealth page follows Jason Miller, <i>Financial Sorcery</i> (New Page, 2012). The author’s invocations and the Lightning Glyph drawings stay in his book; the site gives page numbers. Each page links to the others where the books meet.</p>
           </div>
         </div>
       </section>
